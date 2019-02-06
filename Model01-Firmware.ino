@@ -75,6 +75,8 @@
 // Support for USB quirks, like changing the key state report protocol
 #include "Kaleidoscope-USB-Quirks.h"
 
+#include "Kaleidoscope-TopsyTurvy.h"
+
 /** This 'enum' is a list of all the macros used by the Model 01's firmware
   * The names aren't particularly important. What is important is that each
   * is unique.
@@ -88,9 +90,12 @@
   * a macro key is pressed.
   */
 
-enum { MACRO_VERSION_INFO,
-       MACRO_ANY
-     };
+enum {
+  MACRO_VERSION_INFO,
+  MACRO_SCREEN_FORWARD,
+  MACRO_SCREEN_BACKWARD,
+  MACRO_ANY
+};
 
 
 
@@ -158,10 +163,10 @@ enum { PRIMARY, NUMPAD, FUNCTION }; // layers
   *
   */
 
-#define PRIMARY_KEYMAP_QWERTY
+/* #define PRIMARY_KEYMAP_QWERTY */
 // #define PRIMARY_KEYMAP_COLEMAK
 // #define PRIMARY_KEYMAP_DVORAK
-// #define PRIMARY_KEYMAP_CUSTOM
+#define PRIMARY_KEYMAP_CUSTOM
 
 
 
@@ -187,6 +192,7 @@ KEYMAPS(
    Key_RightAlt,  Key_N, Key_M, Key_Comma, Key_Period,    Key_Slash,     Key_Minus,
    Key_RightShift, Key_LeftAlt, Key_Spacebar, Key_RightControl,
    ShiftToLayer(FUNCTION)),
+	
 
 #elif defined (PRIMARY_KEYMAP_DVORAK)
 
@@ -225,17 +231,17 @@ KEYMAPS(
 #elif defined (PRIMARY_KEYMAP_CUSTOM)
   // Edit this keymap to make a custom layout
   [PRIMARY] = KEYMAP_STACKED
-  (___,          Key_1, Key_2, Key_3, Key_4, Key_5, Key_LEDEffectNext,
-   Key_Backtick, Key_Q, Key_W, Key_E, Key_R, Key_T, Key_Tab,
-   Key_PageUp,   Key_A, Key_S, Key_D, Key_F, Key_G,
-   Key_PageDown, Key_Z, Key_X, Key_C, Key_V, Key_B, Key_Escape,
+  (___,          Key_1,         Key_2,     Key_3,      Key_4, Key_5, Key_LEDEffectNext,
+   Key_Backtick, Key_Q,    Key_W,    Key_E,    Key_R,    Key_T,    Key_Tab,
+   Key_Escape,   Key_A,    Key_S,    Key_D,    Key_F,    Key_G,
+   ___,          Key_Z,    Key_X,    Key_C,    Key_V,    Key_B,    Key_Escape,
    Key_LeftControl, Key_Backspace, Key_LeftGui, Key_LeftShift,
    ShiftToLayer(FUNCTION),
 
-   M(MACRO_ANY),  Key_6, Key_7, Key_8,     Key_9,         Key_0,         LockLayer(NUMPAD),
-   Key_Enter,     Key_Y, Key_U, Key_I,     Key_O,         Key_P,         Key_Equals,
-                  Key_H, Key_J, Key_K,     Key_L,         Key_Semicolon, Key_Quote,
-   Key_RightAlt,  Key_N, Key_M, Key_Comma, Key_Period,    Key_Slash,     Key_Minus,
+   M(MACRO_ANY),  Key_6,    Key_7,    Key_8,     Key_9,      Key_0,         LockLayer(NUMPAD),
+   Key_Enter,     Key_Y,    Key_U,    Key_I,     Key_O,      Key_P,         Key_Equals,
+                  Key_H,    Key_J,    Key_K,     Key_L,      Key_Semicolon, Key_Quote,
+   Key_RightAlt,  Key_N,    Key_M,    Key_Comma, Key_Period, Key_Slash,     Key_Minus,
    Key_RightShift, Key_LeftAlt, Key_Spacebar, Key_RightControl,
    ShiftToLayer(FUNCTION)),
 
@@ -267,7 +273,7 @@ KEYMAPS(
    Key_Tab,  ___,              Key_mouseUp, ___,        Key_mouseBtnR, Key_mouseWarpEnd, Key_mouseWarpNE,
    Key_Home, Key_mouseL,       Key_mouseDn, Key_mouseR, Key_mouseBtnL, Key_mouseWarpNW,
    Key_End,  Key_PrintScreen,  Key_Insert,  ___,        Key_mouseBtnM, Key_mouseWarpSW,  Key_mouseWarpSE,
-   ___, Key_Delete, ___, ___,
+   M(MACRO_SCREEN_BACKWARD), Key_Delete, ___, M(MACRO_SCREEN_FORWARD),
    ___,
 
    Consumer_ScanPreviousTrack, Key_F6,                 Key_F7,                   Key_F8,                   Key_F9,          Key_F10,          Key_F11,
@@ -313,7 +319,6 @@ static void anyKeyMacro(uint8_t keyState) {
     Kaleidoscope.hid().keyboard().pressKey(lastKey, toggledOn);
 }
 
-
 /** macroAction dispatches keymap events that are tied to a macro
     to that macro. It takes two uint8_t parameters.
 
@@ -328,18 +333,34 @@ static void anyKeyMacro(uint8_t keyState) {
 
 const macro_t *macroAction(uint8_t macroIndex, uint8_t keyState) {
   switch (macroIndex) {
+    case MACRO_VERSION_INFO:
+      versionInfoMacro(keyState);
+      break;
 
-  case MACRO_VERSION_INFO:
-    versionInfoMacro(keyState);
-    break;
+    case MACRO_SCREEN_FORWARD:
+      // ctrl-super-rightarrow, Windows desktop right
+      screenForwardMacro(keyState);
+      break;
 
-  case MACRO_ANY:
-    anyKeyMacro(keyState);
-    break;
+    case MACRO_SCREEN_BACKWARD:
+      // ctrl-super-leftarrow, Windows desktop left
+      screenBackwardMacro(keyState);
+      break;
+
+    case MACRO_ANY:
+      anyKeyMacro(keyState);
+      break;
   }
   return MACRO_NONE;
 }
 
+void screenForwardMacro(uint8_t keyState) {
+  kaleidoscope::hid::pressKey(LCTRL(LGUI(Key_RightArrow)));
+}
+
+void screenBackwardMacro(uint8_t keyState) {
+  kaleidoscope::hid::pressKey(LCTRL(LGUI(Key_LeftArrow)));
+}
 
 
 // These 'solid' color effect definitions define a rainbow of
@@ -470,13 +491,13 @@ KALEIDOSCOPE_INIT_PLUGINS(
 
   // The chase effect follows the adventure of a blue pixel which chases a red pixel across
   // your keyboard. Spoiler: the blue pixel never catches the red pixel
-  LEDChaseEffect,
+  /* LEDChaseEffect, */
 
   // These static effects turn your keyboard's LEDs a variety of colors
-  solidRed, solidOrange, solidYellow, solidGreen, solidBlue, solidIndigo, solidViolet,
+  /* solidRed, solidOrange, solidYellow, solidGreen, solidBlue, solidIndigo, solidViolet, */
 
   // The breathe effect slowly pulses all of the LEDs on your keyboard
-  LEDBreatheEffect,
+  /* LEDBreatheEffect, */
 
   // The AlphaSquare effect prints each character you type, using your
   // keyboard's LEDs as a display
