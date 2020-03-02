@@ -1,3 +1,5 @@
+# This project is Hovis's customizations on top of source repo, not intended for distribution but you're welcome to use what you like.
+
 # Keyboardio Model 01 Firmware
 
 _The default firmware for the Keyboardio Model 01_
